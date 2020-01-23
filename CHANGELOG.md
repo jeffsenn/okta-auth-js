@@ -22,6 +22,8 @@
 
 - [#317](https://github.com/okta/okta-auth-js/pull/317) - `pkce` option is now `true` by default. `grantType` option is removed.
 
+- [#320](https://github.com/okta/okta-auth-js/pull/320) - `getWithRedirect`, `getWithPopup`, and `getWithoutPrompt` take a single options object
+
 ### Other
 
 ## 2.12.0

@@ -411,11 +411,13 @@ function buildAuthorizeParams(oauthParams) {
  * @param {String} [options.popupTitle] Title dispayed in the popup.
  *                                      Defaults to 'External Identity Provider User Authentication'
  */
-function getToken(sdk, oauthOptions, options) {
-  oauthOptions = oauthOptions || {};
+function getToken(sdk, options) {
+  if (arguments.length > 2) {
+    return Promise.reject(new AuthSdkError('As of version 3.0, "getToken" takes only a single set of options'));
+  }
   options = options || {};
 
-  return prepareOauthParams(sdk, oauthOptions)
+  return prepareOauthParams(sdk, options)
   .then(function(oauthParams) {
 
     // Start overriding any options that don't make sense
@@ -429,9 +431,9 @@ function getToken(sdk, oauthOptions, options) {
       display: 'popup'
     };
 
-    if (oauthOptions.sessionToken) {
+    if (options.sessionToken) {
       util.extend(oauthParams, sessionTokenOverrides);
-    } else if (oauthOptions.idp) {
+    } else if (options.idp) {
       util.extend(oauthParams, idpOverrides);
     }
 
@@ -441,8 +443,8 @@ function getToken(sdk, oauthOptions, options) {
         urls;
 
     // Get authorizeUrl and issuer
-    urls = oauthUtil.getOAuthUrls(sdk, oauthParams, options);
-    endpoint = oauthOptions.codeVerifier ? urls.tokenUrl : urls.authorizeUrl;
+    urls = oauthUtil.getOAuthUrls(sdk, oauthParams);
+    endpoint = options.codeVerifier ? urls.tokenUrl : urls.authorizeUrl;
     requestUrl = endpoint + buildAuthorizeParams(oauthParams);
 
     // Determine the flow type
@@ -542,32 +544,38 @@ function getToken(sdk, oauthOptions, options) {
   });
 }
 
-function getWithoutPrompt(sdk, oauthOptions, options) {
-  var oauthParams = util.clone(oauthOptions) || {};
-  util.extend(oauthParams, {
+function getWithoutPrompt(sdk, options) {
+  if (arguments.length > 2) {
+    return Promise.reject(new AuthSdkError('As of version 3.0, "getWithoutPrompt" takes only a single set of options'));
+  }
+  options = util.clone(options) || {};
+  util.extend(options, {
     prompt: 'none',
     responseMode: 'okta_post_message',
     display: null
   });
-  return getToken(sdk, oauthParams, options);
+  return getToken(sdk, options);
 }
 
-function getWithPopup(sdk, oauthOptions, options) {
-  var oauthParams = util.clone(oauthOptions) || {};
-  util.extend(oauthParams, {
+function getWithPopup(sdk, options) {
+  if (arguments.length > 2) {
+    return Promise.reject(new AuthSdkError('As of version 3.0, "getWithPopup" takes only a single set of options'));
+  }
+  options = util.clone(options) || {};
+  util.extend(options, {
     display: 'popup',
     responseMode: 'okta_post_message'
   });
-  return getToken(sdk, oauthParams, options);
+  return getToken(sdk, options);
 }
 
-function prepareOauthParams(sdk, oauthOptions) {
+function prepareOauthParams(sdk, options) {
   // clone and prepare options
-  oauthOptions = util.clone(oauthOptions) || {};
+  options = util.clone(options) || {};
 
   // build params using defaults + options
   var oauthParams = getDefaultOAuthParams(sdk);
-  util.extend(oauthParams, oauthOptions);
+  util.extend(oauthParams, options);
 
   if (oauthParams.pkce === false) {
     return Promise.resolve(oauthParams);
@@ -617,15 +625,18 @@ function prepareOauthParams(sdk, oauthOptions) {
     });
 }
 
-function getWithRedirect(sdk, oauthOptions, options) {
-  oauthOptions = util.clone(oauthOptions) || {};
+function getWithRedirect(sdk, options) {
+  if (arguments.length > 2) {
+    return Promise.reject(new AuthSdkError('As of version 3.0, "getWithRedirect" takes only a single set of options'));
+  }
+  options = util.clone(options) || {};
 
-  return prepareOauthParams(sdk, oauthOptions)
+  return prepareOauthParams(sdk, options)
     .then(function(oauthParams) {
 
-      // Dynamically set the responseMode unless the user has provided one
+      // Dynamically set the responseMode unless the user has explicitly provided one
       // Server-side flow requires query. Client-side apps usually prefer fragment.
-      if (!oauthOptions.responseMode) {
+      if (!options.responseMode) {
         if (oauthParams.responseType.includes('code') && !oauthParams.pkce) {
           // server-side flows using authorization_code
           oauthParams.responseMode = 'query';
@@ -635,7 +646,7 @@ function getWithRedirect(sdk, oauthOptions, options) {
         }
       }
 
-      var urls = oauthUtil.getOAuthUrls(sdk, oauthParams, options);
+      var urls = oauthUtil.getOAuthUrls(sdk, options);
       var requestUrl = urls.authorizeUrl + buildAuthorizeParams(oauthParams);
 
       // Set session cookie to store the oauthParams
@@ -685,8 +696,7 @@ function renewToken(sdk, token) {
 
   return sdk.token.getWithoutPrompt({
     responseType: responseType,
-    scopes: token.scopes
-  }, {
+    scopes: token.scopes,
     authorizeUrl: token.authorizeUrl,
     userinfoUrl: token.userinfoUrl,
     issuer: token.issuer
