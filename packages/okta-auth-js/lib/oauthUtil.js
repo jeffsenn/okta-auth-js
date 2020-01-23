@@ -63,7 +63,7 @@ function loadFrame(src) {
 function loadPopup(src, options) {
   var title = options.popupTitle || 'External Identity Provider User Authentication';
   var appearance = 'toolbar=no, scrollbars=yes, resizable=yes, ' +
-    'top=100, left=500, width=600, height=600';
+                   'top=100, left=500, width=600, height=600';
 
   if (util.isIE11OrLess()) {
     // IE<=11 doesn't fully support postMessage at time of writting.
@@ -86,41 +86,41 @@ function getWellKnown(sdk, issuer) {
 
 function getKey(sdk, issuer, kid) {
   return getWellKnown(sdk, issuer)
-  .then(function(wellKnown) {
-    var jwksUri = wellKnown['jwks_uri'];
+    .then(function(wellKnown) {
+      var jwksUri = wellKnown['jwks_uri'];
 
-    // Check our kid against the cached version (if it exists and isn't expired)
-    var cacheContents = httpCache.getStorage();
-    var cachedResponse = cacheContents[jwksUri];
-    if (cachedResponse && Date.now()/1000 < cachedResponse.expiresAt) {
-      var cachedKey = util.find(cachedResponse.response.keys, {
-        kid: kid
-      });
+      // Check our kid against the cached version (if it exists and isn't expired)
+      var cacheContents = httpCache.getStorage();
+      var cachedResponse = cacheContents[jwksUri];
+      if (cachedResponse && Date.now()/1000 < cachedResponse.expiresAt) {
+        var cachedKey = util.find(cachedResponse.response.keys, {
+          kid: kid
+        });
 
-      if (cachedKey) {
-        return cachedKey;
-      }
-    }
-
-    // Remove cache for the key
-    httpCache.clearStorage(jwksUri);
-
-    // Pull the latest keys if the key wasn't in the cache
-    return http.get(sdk, jwksUri, {
-      cacheResponse: true
-    })
-    .then(function(res) {
-      var key = util.find(res.keys, {
-        kid: kid
-      });
-
-      if (key) {
-        return key;
+        if (cachedKey) {
+          return cachedKey;
+        }
       }
 
-      throw new AuthSdkError('The key id, ' + kid + ', was not found in the server\'s keys');
+      // Remove cache for the key
+      httpCache.clearStorage(jwksUri);
+
+      // Pull the latest keys if the key wasn't in the cache
+      return http.get(sdk, jwksUri, {
+        cacheResponse: true
+      })
+                 .then(function(res) {
+                   var key = util.find(res.keys, {
+                     kid: kid
+                   });
+
+                   if (key) {
+                     return key;
+                   }
+
+                   throw new AuthSdkError('The key id, ' + kid + ', was not found in the server\'s keys');
+                 });
     });
-  });
 }
 
 function validateClaims(sdk, claims, validationParams) {
@@ -140,12 +140,12 @@ function validateClaims(sdk, claims, validationParams) {
 
   if (claims.iss !== iss) {
     throw new AuthSdkError('The issuer [' + claims.iss + '] ' +
-      'does not match [' + iss + ']');
+                           'does not match [' + iss + ']');
   }
 
   if (claims.aud !== aud) {
     throw new AuthSdkError('The audience [' + claims.aud + '] ' +
-      'does not match [' + aud + ']');
+                           'does not match [' + aud + ']');
   }
 
   if (claims.iat > claims.exp) {
@@ -241,8 +241,8 @@ function hashToObject(hash) {
   var plus2space = /\+/g;
   var paramSplit = /([^&=]+)=?([^&]*)/g;
 
-  // Remove the leading hash
-  var fragment = hash.substring(1);
+  // Remove the leading hash or hash-slash (slash would be from React HashRouter)
+  var fragment = hash.substring(hash.substr(0,2) === "#/" ? 2 : 1);
 
   var obj = {};
 
